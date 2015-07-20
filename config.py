@@ -34,6 +34,7 @@ class Config:
 		]),
 		'buildings': MapLayer([
 				'stroke:rgb(72.54902%,66.27451%,61.176471%);',	# grey building outline
+				'rgb(43.529412%,36.078431%,30.588235%)',		# outline on historic buildings
 			], [
 				'rgb(68.627451%,61.176471%,55.294118%)',		# buildings
 				'rgb(83.137255%,66.666667%,66.666667%)',		# grand central
