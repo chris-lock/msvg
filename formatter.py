@@ -6,6 +6,7 @@ Step = namedtuple('Step', 'start update finish')
 
 class Formatter:
 	def __init__(self, module_name = ''):
+		self.__step_started = False
 		self.__step_name = ''
 		self.__step_index = 1
 		self.__step_total = 1
@@ -37,7 +38,10 @@ class Formatter:
 		return message.replace('<b>', '\033[1m').replace('</b>', '\033[0m')
 
 	def __step_start(self, name, total = 1):
-		self.__step_finish()
+		if self.__step_started:
+			self.__step_finish()
+		else:
+			self.__step_started = True
 
 		self.__step_name = name
 		self.__step_total = total
