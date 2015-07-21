@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+from msvg.parser import Parser
 from setuptools import setup
 
 setup(
@@ -7,7 +8,7 @@ setup(
 	packages = ['msvg'],
 	package_data = {},
 	entry_points = {
-		'console_scripts': ['msvg = msvg.msvg:main']
+		'console_scripts': ['msvg = Parser.cli']
 	},
 	version = '0.1.0',
 	description = 'A Python parsing library for http://www.openstreetmap.org/ SVG files.',
