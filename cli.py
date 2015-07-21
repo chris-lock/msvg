@@ -1,31 +1,29 @@
+from collections import namedtuple
 from optparse import OptionParser, OptionGroup
 from formatter import Formatter
 
+CliConfig = namedtuple('CliConfig', 'usage options groups')
+
+CliOption = namedtuple('CliOption', 'argv kwargs')
+
+CliGroup = namedtuple('CliGroup', 'title description options')
+
 class Cli:
-	__MODULE_NAME = 'msvg'
-
-	def __init__(self, parser):
+	def __init__(self, module_name, config, parser):
 		self.__parser = parser
-		self.__formatter = Formatter(self.__MODULE_NAME)
-		self.__option_parser = self.__get_option_parser(self.__parser)
+		self.formatter = Formatter(module_name)
+		self.__option_parser = self.__get_option_parser(config, parser)
 
-		self.__formatter.option_parser = self.__option_parser
-		self.__parser.formatter = self.__formatter
+		self.formatter.option_parser = self.__option_parser
 
-	def run(self):
-		options, args = self.__option_parser.parse_args()
-		is_valid, validation_message = self.__parser.is_valid_args(args)
+	def parse_args(self):
+		return self.__option_parser.parse_args()
 
-		if is_valid:
-			self.__parser.parse_args(options, args)
-		else:
-			self.__formatter.usage_error(validation_message)
+	def __get_option_parser(self, config, parser):
+		option_parser = OptionParser(self.formatter.format(config.usage))
 
-	def __get_option_parser(self, parser):
-		option_parser = OptionParser(self.__formatter.format(parser.OPTPARSE.usage))
-
-		self.__add_options(parser.OPTPARSE, parser, option_parser)
-		self.__add_option_groups(parser.OPTPARSE, option_parser, parser)
+		self.__add_options(config, parser, option_parser)
+		self.__add_option_groups(config, option_parser, parser)
 
 		return option_parser
 

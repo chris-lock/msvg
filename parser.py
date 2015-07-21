@@ -1,23 +1,17 @@
 from collections import namedtuple
-from formatter import Formatter
+from cli import CliConfig, CliOption, CliGroup, Cli
 from xml.etree import ElementTree
 from config import Config
 from os import path, listdir, makedirs
 from copy import deepcopy
 
-Optparse = namedtuple('Optparse', 'usage options groups')
-
-Option = namedtuple('Option', 'argv kwargs')
-
-OptionGroup = namedtuple('OptionGroup', 'title description options')
-
 Node = namedtuple('Node', 'value matches')
 
-class ColorOption(Option):
+class ColorOption(CliOption):
 	def __new__(self, argv, name):
-		return Option.__new__(self, argv, {
+		return CliOption.__new__(self, argv, {
 			'help': 'color for ' + name,
-			'metavar': '#NNNNNN',
+			'metavar': '#HEX',
 			'type': 'string',
 			'action': 'store',
 			'dest': name,
@@ -25,9 +19,10 @@ class ColorOption(Option):
 		})
 
 class Parser:
-	OPTPARSE = Optparse(
+	__MODULE_NAME = 'msvg'
+	__CLI = CliConfig(
 		'(input.svg|input/file.svg) (output.svg|output/file.svg) -args', [
-			Option(['-z', '--zoom'], {
+			CliOption(['-z', '--zoom'], {
 				'help': 'zoom of the svg map',
 				'metavar': '(14000|43000)',
 				'type': 'choice',
@@ -36,14 +31,14 @@ class Parser:
 				'choices': ['14000', '43000'],
 				'default': '14000'
 			}),
-			Option(['-e', '--expand'], {
+			CliOption(['-e', '--expand'], {
 				'help': 'expands each file into files for each layer',
 				'action': 'store_true',
 				'dest': 'expand',
 				'default': False
 			})
 		], [
-			OptionGroup('Colors', '', [
+			CliGroup('Colors', '', [
 				ColorOption(['-r', '--roads'], 'roads'),
 				ColorOption(['-b', '--buildings'], 'buildings'),
 				ColorOption(['-p', '--parks'], 'parks'),
@@ -54,6 +49,7 @@ class Parser:
 	__SVG = {'svg': __NAMESPACE}
 
 	def __init__(self):
+		self.__cli = Cli(self.__MODULE_NAME, self.__CLI, self)
 		self.__xml_tree = ElementTree
 		self.__is_expanded = False
 		self.__config = {}
@@ -61,11 +57,19 @@ class Parser:
 		self.__remove_nodes = []
 		self.__replace_nodes = []
 		self.__expanded_nodes = []
-		self.formatter = Formatter()
 
 		self.__xml_tree.register_namespace('', self.__NAMESPACE)
 
-	def is_valid_args(self, args):
+	def cli(self):
+		options, args = self.__cli.parse_args()
+		is_valid, validation_message = self.__is_valid_args(args)
+
+		if is_valid:
+			self.__parse_args(options, args)
+		else:
+			self.__cli.formatter.usage_error(validation_message)
+
+	def __is_valid_args(self, args):
 		if len(args) != 2:
 			return (False, 'takes two arguments')
 
@@ -74,16 +78,16 @@ class Parser:
 
 		return (True, '')
 
-	def parse_args(self, options, args):
+	def __parse_args(self, options, args):
 		dest = args[1]
 
 		if path.exists(dest):
-			self.formatter.usage_error(dest + ' already exists')
+			self.__cli.formatter.usage_error(dest + ' already exists')
 		else:
 			try:
 				self.__parse(options, args[0], dest)
 			except KeyboardInterrupt, SystemExit:
-				self.formatter.step.finish('Interrupted')
+				self.__cli.formatter.step.finish('Interrupted')
 
 	def __parse(self, options, source, dest):
 		self.__set_options(options)
@@ -94,7 +98,7 @@ class Parser:
 		else:
 			self.__parse_file(source, dest)
 
-		self.formatter.step.finish('Finished')
+		self.__cli.formatter.step.finish('Finished')
 
 	def __set_options(self, options):
 		self.__is_expanded = options.expand
@@ -106,7 +110,7 @@ class Parser:
 		}
 
 	def __set_nodes(self):
-		self.formatter.step.start('Setting up layers', len(self.__config))
+		self.__cli.formatter.step.start('Setting up layers', len(self.__config))
 
 		if self.__is_expanded:
 			self.__set_nodes_for_expanded()
@@ -119,7 +123,7 @@ class Parser:
 
 			self.__expanded_nodes.append(Node(node_name, layer_nodes))
 
-			self.formatter.step.update()
+			self.__cli.formatter.step.update()
 
 	def __set_nodes_for_layers(self):
 		empty_nodes = []
@@ -135,7 +139,7 @@ class Parser:
 			else:
 				self.__remove_nodes += layer.replace_nodes
 
-			self.formatter.step.update()
+			self.__cli.formatter.step.update()
 
 		self.__replace_nodes.append(Node('', empty_nodes))
 
@@ -150,7 +154,7 @@ class Parser:
 				)
 
 	def __parse_file(self, source, dest):
-		self.formatter.step.start('Parsing <b>' + source + '</b>')
+		self.__cli.formatter.step.start('Parsing <b>' + source + '</b>')
 
 		tree = self.__xml_tree.parse(source)
 		root = tree.getroot()
@@ -165,17 +169,17 @@ class Parser:
 	def __remove_defs(self, root):
 		defses = root.findall('svg:defs', self.__SVG)
 
-		self.formatter.step.start('Removing <defs>', len(defses))
+		self.__cli.formatter.step.start('Removing <defs>', len(defses))
 
 		for defs in defses:
 			root.remove(defs)
 
-			self.formatter.step.update()
+			self.__cli.formatter.step.update()
 
 	def __create_layer_file(self, tree, root, dest):
 		self.__update_groups_for_layers(root)
 
-		self.formatter.step.start('Saving <b>' + dest + '</b>')
+		self.__cli.formatter.step.start('Saving <b>' + dest + '</b>')
 		tree.write(dest)
 
 	def __update_groups_for_layers(self, root):
@@ -188,12 +192,12 @@ class Parser:
 	def __remove_gs(self, group):
 		sub_groups = group.findall('svg:g', self.__SVG)
 
-		self.formatter.step.start('Removing <g>', len(sub_groups))
+		self.__cli.formatter.step.start('Removing <g>', len(sub_groups))
 
 		for sub_group in sub_groups:
 			group.remove(sub_group)
 
-			self.formatter.step.update()
+			self.__cli.formatter.step.update()
 
 	def __update_layers(self, group):
 		self.__for_all_group_nodes(group, self.__update_node_for_layer, self.__remove_nodes)
@@ -201,12 +205,12 @@ class Parser:
 	def __for_all_group_nodes(self, group, method, matches):
 		nodes = (group.findall('svg:path', self.__SVG) + group.findall('svg:rect', self.__SVG))
 
-		self.formatter.step.start('Updating layers', len(nodes))
+		self.__cli.formatter.step.start('Updating layers', len(nodes))
 
 		for node in nodes:
 			method(group, node, node.get('style'), matches)
 
-			self.formatter.step.update()
+			self.__cli.formatter.step.update()
 
 	def __update_node_for_layer(self, group, node, style, matches):
 		if any(match in style for match in matches):
@@ -233,7 +237,7 @@ class Parser:
 		for group in tree.getroot().findall('svg:g', self.__SVG):
 			self.__for_all_group_nodes(group, self.__update_node_for_expanded, expanded_node.matches)
 
-		self.formatter.step.start('Saving <b>' + expanded_dest + '</b>')
+		self.__cli.formatter.step.start('Saving <b>' + expanded_dest + '</b>')
 		tree.write(expanded_dest)
 
 	def __get_expanded_dest(self, expanded_node_value, dest):
