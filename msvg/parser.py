@@ -144,7 +144,7 @@ class Parser:
 		self.__replace_nodes.append(Node('', empty_nodes))
 
 	def __parse_dir(self, source, dest):
-		makedirs(dest)
+		self.__create_dest_dir(dest)
 
 		for file_name in listdir(source):
 			if file_name.endswith('.svg'):
@@ -152,6 +152,11 @@ class Parser:
 					path.join(source, file_name),
 					path.join(dest, file_name)
 				)
+
+	def __create_dest_dir(self, dest):
+		self.__cli.formatter.step.start('Creating <b>' + dest + '</b> directory')
+
+		makedirs(dest)
 
 	def __parse_file(self, source, dest):
 		self.__cli.formatter.step.start('Parsing <b>' + source + '</b>')
@@ -162,9 +167,9 @@ class Parser:
 		self.__remove_defs(root)
 
 		if not self.__is_expanded:
-			self.__create_layer_file(tree, root, dest)
+			self.__create_layer_file(root, dest, tree)
 		else:
-			self.__create_expanded_files(tree, root, dest)
+			self.__create_expanded_files(source, dest, root, tree)
 
 	def __remove_defs(self, root):
 		defses = root.findall('svg:defs', self.__SVG)
@@ -176,43 +181,40 @@ class Parser:
 
 			self.__cli.formatter.step.update()
 
-	def __create_layer_file(self, tree, root, dest):
-		self.__update_groups_for_layers(root)
+	def __create_layer_file(self, root, dest, tree):
+		self.__remove_gs(root)
+		self.__update_layers(root)
+		self.__save_file(dest, tree)
 
-		self.__cli.formatter.step.start('Saving <b>' + dest + '</b>')
-		tree.write(dest)
+	def __remove_gs(self, root):
+		for group in self.__get_groups(root):
+			sub_groups = self.__get_groups(group)
 
-	def __update_groups_for_layers(self, root):
-		groups = root.findall('svg:g', self.__SVG)
+			self.__cli.formatter.step.start('Removing <g>', len(sub_groups))
 
-		for group in groups:
-			self.__remove_gs(group)
-			self.__update_layers(group)
+			for sub_group in sub_groups:
+				group.remove(sub_group)
 
-	def __remove_gs(self, group):
-		sub_groups = group.findall('svg:g', self.__SVG)
+				self.__cli.formatter.step.update()
 
-		self.__cli.formatter.step.start('Removing <g>', len(sub_groups))
+	def __get_groups(self, base):
+		return base.findall('svg:g', self.__SVG)
 
-		for sub_group in sub_groups:
-			group.remove(sub_group)
+	def __update_layers(self, root):
+		self.__for_all_group_nodes(root, self.__update_for_layer, self.__remove_nodes)
 
-			self.__cli.formatter.step.update()
+	def __for_all_group_nodes(self, root, method, matches):
+		for group in self.__get_groups(root):
+			nodes = (group.findall('svg:path', self.__SVG) + group.findall('svg:rect', self.__SVG))
 
-	def __update_layers(self, group):
-		self.__for_all_group_nodes(group, self.__update_node_for_layer, self.__remove_nodes)
+			self.__cli.formatter.step.start('Updating layers', len(nodes))
 
-	def __for_all_group_nodes(self, group, method, matches):
-		nodes = (group.findall('svg:path', self.__SVG) + group.findall('svg:rect', self.__SVG))
+			for node in nodes:
+				method(group, node, node.get('style'), matches)
 
-		self.__cli.formatter.step.start('Updating layers', len(nodes))
+				self.__cli.formatter.step.update()
 
-		for node in nodes:
-			method(group, node, node.get('style'), matches)
-
-			self.__cli.formatter.step.update()
-
-	def __update_node_for_layer(self, group, node, style, matches):
+	def __update_for_layer(self, group, node, style, matches):
 		if any(match in style for match in matches):
 			group.remove(node)
 		else:
@@ -222,31 +224,45 @@ class Parser:
 
 			node.set('style', style)
 
-	def __create_expanded_files(self, tree, root, dest):
-		groups = root.findall('svg:g', self.__SVG)
+	def __save_file(self, file_name, tree):
+		self.__cli.formatter.step.start('Saving <b>' + file_name + '</b>')
+		tree.write(file_name)
 
-		for group in groups:
-			self.__remove_gs(group)
+	def __create_expanded_files(self, source, dest, root, tree):
+		source_file_name = path.basename(source)
+		clean_dest = path.splitext(dest)[0]
+
+		self.__create_dest_dir(clean_dest)
+		self.__remove_gs(root)
 
 		for expanded_node in self.__expanded_nodes:
-			self.__create_expanded_layer_files(deepcopy(tree), expanded_node, dest)
+			self.__create_expanded_layer_files(clean_dest, expanded_node, source_file_name, deepcopy(tree))
 
-	def __create_expanded_layer_files(self, tree, expanded_node, dest):
-		expanded_dest = self.__get_expanded_dest(expanded_node.value, dest)
+		self.__create_remainder_layer(tree, source_file_name, clean_dest)
 
-		for group in tree.getroot().findall('svg:g', self.__SVG):
-			self.__for_all_group_nodes(group, self.__update_node_for_expanded, expanded_node.matches)
+	def __create_expanded_layer_files(self, dest, expanded_node, source, tree):
+		file_name = path.join(dest, self.__get_expanded_file_name(expanded_node.value, source))
 
-		self.__cli.formatter.step.start('Saving <b>' + expanded_dest + '</b>')
-		tree.write(expanded_dest)
+		self.__for_all_group_nodes(tree.getroot(), self.__remove_all_non_matches, expanded_node.matches)
+		self.__save_file(file_name, tree)
 
-	def __get_expanded_dest(self, expanded_node_value, dest):
+	def __get_expanded_file_name(self, expanded_node_value, source):
 		expanded_node_name = expanded_node_value.replace(' ', '-')
 
-		return('-' + expanded_node_name + '.svg').join(dest.rsplit('.svg'))
+		return ('-' + expanded_node_name + '.svg').join(source.rsplit('.svg'))
 
-	def __update_node_for_expanded(self, group, node, style, matches):
+	def __remove_all_non_matches(self, group, node, style, matches):
 		if not any(match in style for match in matches):
+			group.remove(node)
+
+	def __create_remainder_layer(self, tree, source, dest):
+		all_matches = [matche for expanded_node in self.__expanded_nodes for matche in expanded_node.matches]
+
+		self.__for_all_group_nodes(tree.getroot(), self.__remove_all_matches, all_matches)
+		self.__save_file(path.join(dest, source), tree)
+
+	def __remove_all_matches(self, group, node, style, matches):
+		if any(match in style for match in matches):
 			group.remove(node)
 
 def cli():
