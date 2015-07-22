@@ -248,3 +248,6 @@ class Parser:
 	def __update_node_for_expanded(self, group, node, style, matches):
 		if not any(match in style for match in matches):
 			group.remove(node)
+
+def cli():
+	Parser().cli()
