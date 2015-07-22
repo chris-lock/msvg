@@ -31,6 +31,7 @@ class Config:
 				'rgb(77.647059%,77.647059%,54.117647%)',		# yellow road underside
 				'rgb(80%,63.137255%,41.568627%)', 				# brown road underside
 				'rgb(91.764706%,77.254902%,77.254902%)',		# blue road underside
+				'rgb(72.156863%,89.019608%,72.156863%)',		# green exit ramps
 		]),
 		'buildings': MapLayer([
 				'stroke:rgb(72.54902%,66.27451%,61.176471%);',	# grey building outline
@@ -54,6 +55,7 @@ class Config:
 				'rgb(80%,100%,94.509804%)',						# grey squares in Stuy Town
 				'rgb(80.392157%,96.862745%,78.823529%)',		# parks
 				'rgb(92.941176%,92.941176%,92.941176%)',		# highline and park paths
+				'rgb(77.647059%,89.411765%,70.588235%)',		# park in Mexico City
 			], [
 				'rgb(45.490196%,86.27451%,72.941176%)',			# stadiums
 				'rgb(66.666667%,79.607843%,68.627451%)',		# sports fields
