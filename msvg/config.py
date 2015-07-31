@@ -26,24 +26,24 @@ class Config:
 			], [
 				'rgb(46.666667%,53.333333%,63.137255%)',				# blue road underside
 				'rgb(49.411765%,68.235294%,49.411765%)', 				# green road underside
+				'rgb(72.156863%,89.019608%,72.156863%)',				# green exit ramps
 				'rgb(73.333333%,73.333333%,73.333333%)',				# white road underside
 				'rgb(77.254902%,48.235294%,49.411765%)',				# red road underside
 				'rgb(77.647059%,77.647059%,54.117647%)',				# yellow road underside
 				'rgb(80%,63.137255%,41.568627%)', 						# brown road underside
 				'rgb(91.764706%,77.254902%,77.254902%)',				# blue road underside
-				'rgb(72.156863%,89.019608%,72.156863%)',				# green exit ramps
 		]),
 		'buildings': MapLayer([
 				'stroke:rgb(72.54902%,66.27451%,61.176471%);',			# grey building outline
 				'rgb(43.529412%,36.078431%,30.588235%)',				# outline on historic buildings
 			], [
 				'rgb(68.627451%,61.176471%,55.294118%)',				# buildings
-				'rgb(83.137255%,66.666667%,66.666667%)',				# grand central
-				'rgb(94.901961%,85.490196%,85.098039%)',				# buildings
-				'rgb(92.941176%,86.666667%,78.823529%)',				# buildings
-				'rgb(81.960784%,77.647059%,74.117647%)',				# buildings
-				'rgb(85.098039%,81.568627%,78.823529%)',				# buidlings
 				'rgb(71.372549%,70.980392%,57.254902%)',				# construction
+				'rgb(81.960784%,77.647059%,74.117647%)',				# buildings
+				'rgb(83.137255%,66.666667%,66.666667%)',				# grand central
+				'rgb(85.098039%,81.568627%,78.823529%)',				# buidlings
+				'rgb(92.941176%,86.666667%,78.823529%)',				# buildings
+				'rgb(94.901961%,85.490196%,85.098039%)',				# buildings
 			], [
 		]),
 		'parks': MapLayer([
@@ -52,15 +52,15 @@ class Config:
 				'rgb(54.117647%,82.745098%,68.627451%)',				# Pier 40 soccer field
 				'rgb(62.745098%,81.176471%,52.156863%)',				# parks near UN
 				'rgb(70.980392%,89.019608%,70.980392%)',				# parks in NJ
+				'rgb(77.647059%,89.411765%,70.588235%)',				# park in Mexico City
 				'rgb(80%,100%,94.509804%)',								# grey squares in Stuy Town
 				'rgb(80.392157%,96.862745%,78.823529%)',				# parks
+				'rgb(81.176471%,92.54902%,65.882353%)',					# central park patches
 				'rgb(92.941176%,92.941176%,92.941176%)',				# highline and park paths
-				'rgb(77.647059%,89.411765%,70.588235%)',				# park in Mexico City
 			], [
 				'rgb(45.490196%,86.27451%,72.941176%)',					# stadiums
 				'rgb(66.666667%,79.607843%,68.627451%)',				# sports fields
 				'rgb(68.235294%,81.960784%,62.745098%)',				# second layer of Byrant Square Park
-				'rgb(81.176471%,92.54902%,65.882353%)',					# central park patches
 				'rgb(93.72549%,83.921569%,70.980392%)',					# weird parks in NJ
 		]),
 		'city blocks': MapRemoveLayer([
@@ -125,15 +125,15 @@ class Config:
 					'stroke-width:2;stroke-linecap:butt;'				# red road labels
 					'stroke-linejoin:round;'							# 	^
 					'stroke:rgb(86.666667%,62.352941%,62.352941%);',	# 	^
+					'stroke-width:2;stroke-linecap:butt;'				# High Bridge label
+					'stroke-linejoin:round;'							# 	^
+					'stroke:rgb(92.941176%,92.941176%,92.941176%);',	# 	^
 					'stroke-width:2;stroke-linecap:butt;'				# yellow road labels
 					'stroke-linejoin:round;'							# 	^
 					'stroke:rgb(97.254902%,97.254902%,72.941176%);',	# 	^
 					'stroke-width:2;stroke-linecap:butt;'				# brown road labels
 					'stroke-linejoin:round;'							# 	^
 					'stroke:rgb(97.647059%,83.921569%,66.666667%);',	# 	^
-					'stroke-width:2;stroke-linecap:butt;'				# High Bridge label
-					'stroke-linejoin:round;'							# 	^
-					'stroke:rgb(92.941176%,92.941176%,92.941176%);',	# 	^
 					'stroke-width:3;stroke-linecap:butt;'				# white numbers along FDR
 					'stroke-linejoin:round;'							# 	^
 					'stroke:rgb(100%,100%,100%);',						# 	^
